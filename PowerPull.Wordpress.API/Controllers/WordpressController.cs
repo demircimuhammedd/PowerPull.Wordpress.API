@@ -14,7 +14,7 @@ using WordPressSharp.Models;
 namespace PowerPull.Wordpress.API.Controllers
 {
   public class WordpressController : ApiController
-  { 
+  {
     public async Task<string> Get()
     {
       return "Success";
@@ -27,12 +27,8 @@ namespace PowerPull.Wordpress.API.Controllers
 
     public static async Task SaveBlogAsync(ParamObj postsTemp)
     {
-      Console.WriteLine(
-          "Makale Seo uyumlu olsun mu?: \r\n " +
-             "1- Evet \r\n " +
-             "2- Hayır");
 
-      bool isSeoArticle = false;// Convert.ToInt32(Console.ReadLine()) == 1 ? true : false;
+      bool isSeoArticle = postsTemp.ReArticleActive == 1 ? true : false;// Convert.ToInt32(Console.ReadLine()) == 1 ? true : false;
       string connectionString = string.Format("Server = {0}; Database = {1}; Uid = {2}; Pwd = {3}; Convert Zero Datetime = true; Allow User Variables=True; ", postsTemp.Server, postsTemp.Database, postsTemp.UId, postsTemp.Pwd);
       using (MySqlConnection mySqlConnection = new MySqlConnection(connectionString))
       {
@@ -176,5 +172,6 @@ namespace PowerPull.Wordpress.API.Controllers
     public string Database { get; set; }
     public string UId { get; set; }
     public string Pwd { get; set; }
+    public int ReArticleActive { get; set; }
   }
 }
