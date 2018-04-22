@@ -14,20 +14,12 @@ using WordPressSharp.Models;
 namespace PowerPull.Wordpress.API.Controllers
 {
   public class WordpressController : ApiController
-  {
-    private string _ConnectionString
-    {
-      get
-      {
-        return "Server = 94.73.147.204; Database = u7614282_bigdatadb; Uid = u7614282_user972; Pwd = ESyy30R7; Convert Zero Datetime = true; Allow User Variables = True; ";
-      }
-    }
-
+  { 
     public async Task<string> Get()
     {
       return "Success";
     }
-     
+
     public async Task PostAsync([FromBody]ParamObj paramObj)
     {
       await SaveBlogAsync(paramObj);
@@ -41,8 +33,8 @@ namespace PowerPull.Wordpress.API.Controllers
              "2- Hayır");
 
       bool isSeoArticle = false;// Convert.ToInt32(Console.ReadLine()) == 1 ? true : false;
-
-      using (MySqlConnection mySqlConnection = new MySqlConnection("Server = 94.73.147.204; Database = u7614282_mzills; Uid = u7614282_mzills; Pwd = FEax10F8; Convert Zero Datetime = true; Allow User Variables=True; "))
+      string connectionString = string.Format("Server = {0}; Database = {1}; Uid = {2}; Pwd = {3}; Convert Zero Datetime = true; Allow User Variables=True; ", postsTemp.Server, postsTemp.Database, postsTemp.UId, postsTemp.Pwd);
+      using (MySqlConnection mySqlConnection = new MySqlConnection(connectionString))
       {
         WordPressSiteConfig config = new WordPressSiteConfig
         {
@@ -110,7 +102,7 @@ namespace PowerPull.Wordpress.API.Controllers
                   post.Content = string.Concat(post.Content, item.Media);
                   post.FeaturedImageId = "1";
                 }
-                 
+
                 await client.NewPostAsync(post);
 
                 Console.WriteLine("({0} - {1}) Eklenen makale: {2}", postsTemp.Posts.Count, index, item.Title);
@@ -134,10 +126,9 @@ namespace PowerPull.Wordpress.API.Controllers
 
     private static bool IsExistRowDb(MySqlConnection mySqlConnection, string post_title)
     {
-      return false;
-      //var total = mySqlConnection.Query<long>("SELECT COUNT(*) FROM wp_posts where post_title = @post_title", new { post_title }).Single();
-      //if (total > 0) return true;
-      //else return false;
+      var total = mySqlConnection.Query<long>("SELECT COUNT(*) FROM wp_posts where post_title = @post_title", new { post_title }).Single();
+      if (total > 0) return true;
+      else return false;
     }
 
     private static string ArticleReWrite(string article)
@@ -181,5 +172,9 @@ namespace PowerPull.Wordpress.API.Controllers
     public string Website { get; set; }
     public string Username { get; set; }
     public string Password { get; set; }
+    public string Server { get; set; }
+    public string Database { get; set; }
+    public string UId { get; set; }
+    public string Pwd { get; set; }
   }
 }
