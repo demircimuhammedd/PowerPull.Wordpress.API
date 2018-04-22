@@ -27,8 +27,7 @@ namespace PowerPull.Wordpress.API.Controllers
     {
       return "Success";
     }
-
-
+     
     public async Task PostAsync([FromBody]ParamObj paramObj)
     {
       await SaveBlogAsync(paramObj);
