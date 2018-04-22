@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2037
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerPull.Wordpress.API", "PowerPull.Wordpress.API\PowerPull.Wordpress.API.csproj", "{9B5131DB-FC61-4329-8722-A04675ED8E48}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WordPressSharp", "WordPressSharp\WordPressSharp.csproj", "{7A938355-0B6B-48B7-97FB-C0C09015307B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9B5131DB-FC61-4329-8722-A04675ED8E48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B5131DB-FC61-4329-8722-A04675ED8E48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B5131DB-FC61-4329-8722-A04675ED8E48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B5131DB-FC61-4329-8722-A04675ED8E48}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A938355-0B6B-48B7-97FB-C0C09015307B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A938355-0B6B-48B7-97FB-C0C09015307B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A938355-0B6B-48B7-97FB-C0C09015307B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A938355-0B6B-48B7-97FB-C0C09015307B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FBBB6B86-C4DE-4EC3-A80C-A99C3CB262F4}
+	EndGlobalSection
+EndGlobal
