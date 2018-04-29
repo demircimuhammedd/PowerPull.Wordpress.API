@@ -1,8 +1,8 @@
-﻿using System.Web.Mvc;
+﻿using System.Web.Http;
 
 namespace PowerPull.Wordpress.API.Controllers.Base
 {
-  public class BaseController : Controller
+  public class BaseController : ApiController
   {
     public string ApiUrl
     {
