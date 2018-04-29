@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
+using PowerPull.Wordpress.API.Controllers.Base;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -15,21 +16,13 @@ using WordPressSharp.Models;
 
 namespace PowerPull.Wordpress.API.Controllers
 {
-  public class WordpressController : ApiController
-  {
-    private string _BaseUrl
-    {
-      get
-      {
-        return "http://localhost:58518/api/";
-      }
-    }
-
+  public class WordpressController : BaseController
+  { 
     public string Get => "Success";
 
     public async Task PostAsync([FromBody]FireViewModel fire)
     {
-      RestClient restClient = new RestClient(_BaseUrl);
+      RestClient restClient = new RestClient(ApiUrl);
       RestRequest request = new RestRequest("wordpress/{id}", Method.GET);
       request.AddUrlSegment("id", fire.Id);
       IRestResponse restResponse = await restClient.ExecuteTaskAsync<dynamic>(request);
@@ -95,7 +88,7 @@ namespace PowerPull.Wordpress.API.Controllers
       try
       {
         if (!media.Contains("iframe") && !string.IsNullOrEmpty(media))
-        { 
+        {
           string imgExtension = string.Empty;
           if (media.Contains(".jpg"))
             imgExtension = ".jpg";
@@ -122,9 +115,9 @@ namespace PowerPull.Wordpress.API.Controllers
       return post;
     }
 
-    private static bool IsExistRowDb(MySqlConnection mySqlConnection, string post_title)
+    private static bool IsExistRowDb(MySqlConnection connection, string post_title)
     {
-      var total = mySqlConnection.Query<long>("SELECT COUNT(*) FROM wp_posts where post_title = @post_title", new { post_title }).Single();
+      var total = connection.Query<long>("SELECT COUNT(*) FROM wp_posts where post_title = @post_title", new { post_title }).Single();
       if (total > 0) return true;
       else return false;
     }
