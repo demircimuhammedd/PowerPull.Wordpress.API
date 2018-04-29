@@ -1,5 +1,7 @@
 ﻿using Dapper;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,40 +17,41 @@ namespace PowerPull.Wordpress.API.Controllers
 {
   public class WordpressController : ApiController
   {
-    public async Task<string> Get()
+    private string _BaseUrl
     {
-      return "Success";
-    }
-
-    public async Task PostAsync([FromBody]ParamObj paramObj)
-    {
-      await SaveBlogAsync(paramObj);
-    }
-
-    public static async Task SaveBlogAsync(ParamObj postsTemp)
-    {
-
-      bool isSeoArticle = postsTemp.ReArticleActive == 1 ? true : false;// Convert.ToInt32(Console.ReadLine()) == 1 ? true : false;
-      string connectionString = string.Format("Server = {0}; Database = {1}; Uid = {2}; Pwd = {3}; Convert Zero Datetime = true; Allow User Variables=True; ", postsTemp.Server, postsTemp.Database, postsTemp.UId, postsTemp.Pwd);
-      using (MySqlConnection mySqlConnection = new MySqlConnection(connectionString))
+      get
       {
-        WordPressSiteConfig config = new WordPressSiteConfig
-        {
-          BaseUrl = postsTemp.Website,
-          Username = postsTemp.Username,
-          Password = postsTemp.Password,
-          BlogId = 1
-        };
+        return "http://localhost:58518/api/";
+      }
+    }
 
-        using (var client = new WordPressClient(config))
+    public string Get => "Success";
+
+    public async Task PostAsync([FromBody]FireViewModel fire)
+    {
+      RestClient restClient = new RestClient(_BaseUrl);
+      RestRequest request = new RestRequest("wordpress/{id}", Method.GET);
+      request.AddUrlSegment("id", fire.Id);
+      IRestResponse restResponse = await restClient.ExecuteTaskAsync<dynamic>(request);
+      Wordpress wordpress = JsonConvert.DeserializeObject<Wordpress>(restResponse.Content);
+
+      string connectionString =
+        string.Format("Server = {0}; Database = {1}; Uid = {2}; Pwd = {3}; Convert Zero Datetime = true; Allow User Variables=True; ",
+        wordpress.Server, wordpress.Database_Name, wordpress.UId, wordpress.Pwd);
+
+      using (MySqlConnection _connection = new MySqlConnection(connectionString))
+      {
+        bool isSeoArticle = false;
+        WordPressSiteConfig config = new WordPressSiteConfig { BaseUrl = wordpress.Website, Username = wordpress.Username, Password = wordpress.Password, BlogId = 1 };
+
+        using (WordPressClient client = new WordPressClient(config))
         {
-          int index = postsTemp.Posts.Count;
-          foreach (var item in postsTemp.Posts)
+          int index = fire.List.Count;
+          foreach (var item in fire.List)
           {
             try
             {
-
-              if (!IsExistRowDb(mySqlConnection, item.Title))
+              if (!IsExistRowDb(_connection, item.Title))
               {
                 string contentBody = string.Empty;
                 if (isSeoArticle)
@@ -58,66 +61,65 @@ namespace PowerPull.Wordpress.API.Controllers
                 string seoBody = WebUtility.HtmlDecode(isSeoArticle ? (contentBody.Length > 50) ? contentBody : item.Content : item.Content);
                 if (string.IsNullOrEmpty(seoBody)) continue;
 
-                item.SeoBody = seoBody;
-
-                item.Title = WebUtility.HtmlDecode(item.Title);
                 var post = new Post
                 {
                   PostType = "post",
                   Title = item.Title,
-                  Content = item.SeoBody,
+                  Content = seoBody,
                   PublishDateTime = DateTime.Now,
                   Status = "publish"
                 };
 
-                try
-                {
-                  if (!item.Media.Contains("iframe") && !string.IsNullOrEmpty(item.Media))
-                  {
-                    var media = XElement.Parse(item.Media).FirstAttribute.Value;
-
-                    string imgExtension = string.Empty;
-                    if (media.Contains(".jpg"))
-                      imgExtension = ".jpg";
-
-                    if (media.Contains(".png"))
-                      imgExtension = ".png";
-
-                    var featureImage = Data.CreateFromUrl(media.Substring(0, media.IndexOf(imgExtension) + imgExtension.Length));
-                    UploadResult uploadResult = await client.UploadFileAsync(featureImage);
-                    post.FeaturedImageId = uploadResult.Id;
-                  }
-                  else
-                  {
-                    post.Content = string.Concat(post.Content, item.Media);
-                    post.FeaturedImageId = "1";
-                  }
-                }
-                catch (Exception)
-                {
-                  post.Content = string.Concat(post.Content, item.Media);
-                  post.FeaturedImageId = "1";
-                }
-
+                post = await MediaProcessAsync(client, post, item.Media);
                 await client.NewPostAsync(post);
-
-                Console.WriteLine("({0} - {1}) Eklenen makale: {2}", postsTemp.Posts.Count, index, item.Title);
+                Console.WriteLine("({0} - {1}) Eklenen makale: {2}", fire.List.Count, index, item.Title);
               }
               else
               {
-                Console.WriteLine("({0} - {1}) Zaten kayıtlı makale: {2}", postsTemp.Posts.Count, index, item.Title);
+                Console.WriteLine("({0} - {1}) Zaten kayıtlı makale: {2}", fire.List.Count, index, item.Title);
               }
 
               index--;
             }
-            catch (Exception ex)
+            catch
             {
-              Console.WriteLine(ex.Message);
               continue;
             }
           }
         }
       }
+    }
+
+    private async Task<Post> MediaProcessAsync(WordPressClient client, Post post, string media)
+    {
+      try
+      {
+        if (!media.Contains("iframe") && !string.IsNullOrEmpty(media))
+        { 
+          string imgExtension = string.Empty;
+          if (media.Contains(".jpg"))
+            imgExtension = ".jpg";
+
+          if (media.Contains(".png"))
+            imgExtension = ".png";
+
+          var featureImage = Data.CreateFromUrl(media.Substring(0, media.IndexOf(imgExtension) + imgExtension.Length));
+          UploadResult uploadResult = await client.UploadFileAsync(featureImage);
+          post.FeaturedImageId = uploadResult.Id;
+        }
+        else
+        {
+          post.Content = string.Concat(post.Content, media);
+          post.FeaturedImageId = "1";
+        }
+      }
+      catch (Exception)
+      {
+        post.Content = string.Concat(post.Content, media);
+        post.FeaturedImageId = "1";
+      }
+
+      return post;
     }
 
     private static bool IsExistRowDb(MySqlConnection mySqlConnection, string post_title)
@@ -152,26 +154,31 @@ namespace PowerPull.Wordpress.API.Controllers
     }
   }
 
-  public class PostTemp
+  public class FireViewModel
   {
-    public string Title { get; set; }
-    public string Spot { get; set; }
-    public string Url { get; set; }
-    public string Media { get; set; }
-    public string Content { get; set; }
-    public string SeoBody { get; set; }
+    public int? Id { get; set; }
+    public List<Fire> List { get; set; }
   }
 
-  public class ParamObj
+  public class Fire
   {
-    public List<PostTemp> Posts { get; set; }
+    public string Url { get; set; }
+    public string Title { get; set; }
+    public string Spot { get; set; }
+    public string Media { get; set; }
+    public string Content { get; set; }
+  }
+
+  public class Wordpress
+  {
+    public int ID { get; set; }
+    public string Name { get; set; }
     public string Website { get; set; }
     public string Username { get; set; }
     public string Password { get; set; }
     public string Server { get; set; }
-    public string Database { get; set; }
+    public string Database_Name { get; set; }
     public string UId { get; set; }
     public string Pwd { get; set; }
-    public int ReArticleActive { get; set; }
   }
 }
